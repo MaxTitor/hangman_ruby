@@ -21,17 +21,61 @@ class Hangman
 			puts "You've already guessed that letter"
 			return
 		elsif @word.include?(@letter)
+			@amount = @word.count(@letter)
+			if @amount > 1
+				until @amount == 1
+					@correct_letters.push(@letter)
+					@amount -= 1
+				end
+			end
 			@correct_letters.push(@letter)
-		else
+		elsif @word.include?(@letter) == false
 			@wrong_letters.push(@letter)
 			@guesses += 1
 		end
 	end
 
+	def save
+		File.delete("save") if File.exist?("save")
+		File.open("save", "w") do |file|
+			file.write(@word.join)
+			file.write("\n")
+			file.write(@guesses)
+			file.write("\n")
+			file.write(@correct_letters.join)
+			file.write("\n")
+			file.write(@wrong_letters.join)
+		end
+	end
+
+	def load
+		File.open("save", "r") do |file|
+			@word = Array.new
+			@saved_word = file.readline().split("")
+			@saved_word.each do |letter|
+				@word.push(letter)
+			end
+
+			@guesses = file.readline().to_i
+
+			@correct_letters = Array.new
+			@saved_correct_letters = file.readline().split("")
+			@saved_correct_letters.each do |letter|
+				@correct_letters.push(letter)
+			end
+
+			@wrong_letters = Array.new
+			@saved_wrong_letters = file.readline().split("")
+			@saved_wrong_letters.each do |letter|
+				@wrong_letters.push(letter)
+			end
+		end
+	end
+
 	def status
-		if @guesses >= 8
+		if @guesses == 8
 			return "lose"
-		elsif @word.length - 1 == @correct_letters.length
+		elsif @word.length == @correct_letters.length
 			return "win"
 		end
 	end
@@ -66,7 +110,13 @@ class Shell
 			puts
 			print ">"
 			player_input = gets.chomp.to_s
-			game.input(player_input)
+			if player_input == "/save"
+				game.save
+			elsif player_input == "/load"
+				game.load
+			else
+				game.input(player_input)
+			end
 			game.show
 
 			if game.status == "lose"
